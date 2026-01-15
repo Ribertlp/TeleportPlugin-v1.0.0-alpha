@@ -208,7 +208,7 @@ This is an open-source project! Contributions welcome:
 
 - **Issues**: Report bugs on GitHub Issues
 - **Email**: robert@grafy.org
-- **Website**: grafy.org
+- **Website**: https://grafy.org
 
 ---
 
