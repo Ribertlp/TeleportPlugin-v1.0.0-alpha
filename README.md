@@ -15,7 +15,6 @@ A comprehensive home teleportation system for Hytale servers. Players can set, m
 - **🚀 Teleport**: Instantly travel to saved home locations
 - **📋 List Homes**: View all saved homes with coordinates
 - **🗑️ Delete Homes**: Remove unwanted home locations
-- **💾 Data Persistence**: Homes saved in JSON format
 - **🔒 Thread-Safe**: Proper Hytale API threading implementation
 - **⚡ Fast Performance**: Optimized for server efficiency
 
@@ -66,11 +65,6 @@ Uses a **triple-redundancy approach** for maximum compatibility:
 1. `transformComponent.getPosition().assign(homePosition)`
 2. `store.addComponent(ref, Teleport.getComponentType(), new Teleport(...))`
 3. `transformComponent.getTransform().setPosition(homePosition)`
-
-### Data Storage
-- **Format**: JSON files in `plugins/TeleportPlugin/homes/`
-- **Structure**: One file per player (`{playerName}.json`)
-- **Thread-Safe**: File operations happen outside world thread
 
 ## 📁 Project Structure
 ```
