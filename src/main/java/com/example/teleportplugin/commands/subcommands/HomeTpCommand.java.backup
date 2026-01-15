@@ -1,0 +1,85 @@
+package com.example.teleportplugin.commands.subcommands;
+
+import com.example.teleportplugin.TeleportPlugin;
+import com.example.teleportplugin.data.HomeManager;
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.command.system.CommandContext;
+import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
+import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
+import com.hypixel.hytale.server.core.command.system.basecommands.CommandBase;
+import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.math.vector.Vector3d;
+
+import javax.annotation.Nonnull;
+
+/**
+ * /home tp <name> - Teleport to a home
+ */
+public class HomeTpCommand extends CommandBase {
+
+    private final RequiredArg<String> homeNameArg = withRequiredArg("name", "Name of the home to teleport to", ArgTypes.STRING);
+
+    public HomeTpCommand() {
+        super("tp", "Teleport to one of your homes - /home tp <name>");
+    }
+
+    @Override
+    protected void executeSync(@Nonnull CommandContext context) {
+        try {
+            // Check if executed by player
+            if (!context.isPlayer()) {
+                context.sendMessage(Message.raw("This command can only be used by players!").color("#ff5555"));
+                return;
+            }
+
+            // Get player reference
+            Ref<EntityStore> playerRef = context.senderAsPlayerRef();
+            if (playerRef == null || !playerRef.isValid()) {
+                context.sendMessage(Message.raw("You must be in a world to teleport!").color("#ff5555"));
+                return;
+            }
+
+            String playerId = context.sender().getDisplayName();
+            String homeName = homeNameArg.get(context);
+
+            // Get home location
+            HomeManager homeManager = TeleportPlugin.getInstance().getHomeManager();
+            HomeManager.HomeLocation home = homeManager.getHome(playerId, homeName);
+
+            if (home == null) {
+                context.sendMessage(Message.raw("[X] Home '" + homeName + "' not found!").color("#ff5555"));
+                context.sendMessage(Message.raw("Use '/home list' to see your homes.").color("#aaaaaa"));
+                return;
+            }
+
+            // Get player's transform component and set new position
+            TransformComponent transformComponent = (TransformComponent)playerRef.getStore().ensureAndGetComponent(playerRef, TransformComponent.getComponentType());
+            if (transformComponent == null) {
+                context.sendMessage(Message.raw("Unable to teleport - no transform component!").color("#ff5555"));
+                return;
+            }
+
+            // Set the new position
+            Vector3d newPosition = new Vector3d(home.x, home.y, home.z);
+            transformComponent.getTransform().setPosition(newPosition);
+
+            // Send success message
+            context.sendMessage(Message.raw("+====================================+").color("#55ffff"));
+            context.sendMessage(Message.raw("|        TELEPORT SUCCESSFUL         |").color("#00ff00").bold(true));
+            context.sendMessage(Message.raw("+====================================+").color("#55ffff"));
+            context.sendMessage(Message.raw("Teleported to: ").color("#ffaa00").bold(true)
+                    .insert(Message.raw(homeName).color("#ffffff")));
+            context.sendMessage(Message.raw("Location: ").color("#ffaa00").bold(true)
+                    .insert(Message.raw(home.toString()).color("#ffffff")));
+
+            System.out.println("[HomeTpCommand] Player " + playerId + " teleported to home '" + homeName + "' at " + home.toString());
+
+        } catch (Exception e) {
+            System.err.println("[HomeTpCommand] Error: " + e.getMessage());
+            e.printStackTrace();
+            context.sendMessage(Message.raw("[X] Error teleporting to home!").color("#ff5555"));
+        }
+    }
+}

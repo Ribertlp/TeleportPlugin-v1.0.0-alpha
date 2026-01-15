@@ -1,0 +1,23 @@
+{
+  "Group": "TeleportPlugin",
+  "Name": "TeleportPlugin",
+  "Version": "1.0.0",
+  "Description": "Home teleportation system with /home set, tp, delete, list commands",
+  "Authors": [
+    {
+      "Name": "Ribertlp",
+      "Email": "robert@grafy.org",
+      "Url": "https://grafy.org"
+    },
+    {
+      "Name": "Claude Code",
+      "Url": "https://claude.ai/code"
+    }
+  ],
+  "Website": "https://github.com/Ribertlp/HytaleDevCore-TeleportPlugin",
+  "Main": "com.example.teleportplugin.TeleportPlugin",
+  "ServerVersion": "*",
+  "Dependencies": {},
+  "OptionalDependencies": {},
+  "DisabledByDefault": false
+}
