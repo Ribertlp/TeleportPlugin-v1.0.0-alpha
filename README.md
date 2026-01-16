@@ -11,10 +11,14 @@
 A comprehensive home teleportation system for Hytale servers. Players can set, manage, and teleport to personal home locations with an easy-to-use command system.
 
 ## ✨ Features
-- **🏠 Set Homes**: Create personal teleportation points
-- **🚀 Teleport**: Instantly travel to saved home locations
-- **📋 List Homes**: View all saved homes with coordinates
+- **🏠 Set Homes**: Create personal teleportation points (with rotation)
+- **🚀 Teleport**: Travel to saved home locations with cooldown system
+- **📋 List Homes**: View all saved homes with coordinates and rotation
 - **🗑️ Delete Homes**: Remove unwanted home locations
+- **💾 JSON Data Storage**: Thread-safe persistent storage system
+- **⏱️ Cooldown System**: Configurable teleport delays (3s default)
+- **🎯 Rotation Storage**: Saves and restores yaw, pitch, roll
+- **🚶 Movement Detection**: Cancels teleport when player moves (planned)
 - **🔒 Thread-Safe**: Proper Hytale API threading implementation
 - **⚡ Fast Performance**: Optimized for server efficiency
 
@@ -35,17 +39,22 @@ A comprehensive home teleportation system for Hytale servers. Players can set, m
 
 ### Command Examples
 ```bash
-# Set a home called "base"
+# Set a home called "base" (saves current position and rotation)
 /home set base
+# Output: "§aHome '§6base§a' wurde gesetzt!"
 
-# Teleport to your base
+# Teleport to your base (with 3-second cooldown)
 /home tp base
+# Output: "§7Teleportation zu §6base§7 startet in 3 Sekunden..."
+# Output: "§aDu wurdest zu '§6base§a' teleportiert!"
 
-# List all your homes
+# List all your homes (shows coordinates and rotation)
 /home list
+# Output: "§6base §7- §fworld §7(§f123.4§7, §f64.0§7, §f456.7§7) §8[Y:90.5 P:0.0 R:0.0]"
 
 # Delete a home
 /home delete base
+# Output: "§aHome '§6base§a' wurde gelöscht!"
 ```
 
 ## 🔧 Technical Details
@@ -79,11 +88,58 @@ src/
 │   │   │       ├── HomeTpCommand.java       # Teleport functionality
 │   │   │       ├── HomeListCommand.java     # List homes functionality
 │   │   │       └── HomeDeleteCommand.java   # Delete home functionality
-│   │   └── data/
-│   │       └── HomeManager.java             # Data management
+│   │   ├── data/
+│   │   │   └── HomeManager.java             # Data management
+│   │   ├── config/
+│   │   │   └── PluginConfig.java            # Configuration system
+│   │   ├── cooldown/
+│   │   │   ├── TeleportCooldown.java        # Individual cooldown instances
+│   │   │   └── TeleportCooldownManager.java # Cooldown management
+│   │   ├── permissions/
+│   │   │   └── PermissionManager.java       # Permission handling
+│   │   └── systems/
+│   │       └── PlayerMovementSystem.java    # Movement detection
 │   └── resources/
 │       ├── plugin.json                      # Plugin manifest
 │       └── README.md                        # This file
+```
+
+## 💾 Data Storage
+
+### JSON Structure
+Homes are stored in individual JSON files per player:
+```
+plugins/TeleportPlugin/
+├── config.json                    # Plugin configuration
+└── homes/
+    ├── player-uuid-1.json         # Player 1's homes
+    ├── player-uuid-2.json         # Player 2's homes
+    └── ...
+```
+
+### Configuration
+```json
+{
+  "teleportCooldownSeconds": 3,
+  "enableMovementCancellation": true,
+  "defaultMaxHomes": 3,
+  "enableCrossWorldTeleportation": true
+}
+```
+
+### Home Data Format
+```json
+{
+  "spawn": {
+    "worldId": "world",
+    "x": 0.0,
+    "y": 64.0,
+    "z": 0.0,
+    "yaw": 90.5,
+    "pitch": 0.0,
+    "roll": 0.0
+  }
+}
 ```
 
 ## 🚀 Installation
@@ -128,6 +184,15 @@ src/
 **Issue**: Success message shown but player doesn't move
 **Solution**: Uses triple-method approach for maximum compatibility
 
+### Movement Detection Not Working
+**Issue**: Teleport doesn't cancel when player moves
+**Status**: ⚠️ Known limitation - requires Hytale Player Movement Events
+**Workaround**: System is implemented but needs real Hytale API integration
+
+### TimerTask isCancelled() Error
+**Issue**: `Cannot resolve method 'isCancelled' in 'TimerTask'`
+**Solution**: ✅ Fixed - removed isCancelled() calls, using only cancel()
+
 ### Plugin Not Loading
 **Issue**: Plugin doesn't appear in server
 **Solution**: Check `plugin.json` manifest and JAR placement in `mods/` folder
@@ -151,26 +216,61 @@ System.out.println("[HomeTpCommand] Player teleported to home 'example'");
 
 ### HomeManager Methods
 ```java
-// Set a home
-homeManager.setHome(String playerId, String homeName, double x, double y, double z)
+// Set a home (with rotation)
+homeManager.setHome(String playerId, String homeName, String worldId,
+                   double x, double y, double z, float yaw, float pitch, float roll)
+
+// Set a home (legacy, no rotation)
+homeManager.setHome(String playerId, String homeName, String worldId, double x, double y, double z)
 
 // Get a home
-HomeLocation home = homeManager.getHome(String playerId, String homeName)
+Optional<HomeLocation> home = homeManager.getHome(String playerId, String homeName)
 
 // List homes
-Map<String, HomeLocation> homes = homeManager.getHomes(String playerId)
+Set<String> homeNames = homeManager.getPlayerHomes(String playerId)
 
 // Delete a home
-homeManager.deleteHome(String playerId, String homeName)
+boolean success = homeManager.deleteHome(String playerId, String homeName)
+
+// Check if home exists
+boolean exists = homeManager.hasHome(String playerId, String homeName)
+
+// Get home count
+int count = homeManager.getHomeCount(String playerId)
 ```
 
 ### HomeLocation Class
 ```java
 public static class HomeLocation {
-    public double x, y, z;
-    public String world;
-    // Constructor and methods
+    private final String worldId;
+    private final double x, y, z;
+    private final float yaw, pitch, roll;
+
+    // Getters
+    public String getWorldId() { return worldId; }
+    public double getX() { return x; }
+    public double getY() { return y; }
+    public double getZ() { return z; }
+    public float getYaw() { return yaw; }
+    public float getPitch() { return pitch; }
+    public float getRoll() { return roll; }
 }
+```
+
+### Cooldown System API
+```java
+// Start a cooldown
+cooldownManager.startCooldown(String playerId, String homeName,
+                             Runnable onSuccess, Runnable onCancel);
+
+// Check if player has cooldown
+boolean hasCooldown = cooldownManager.hasCooldown(String playerId);
+
+// Get remaining seconds
+int remaining = cooldownManager.getRemainingSeconds(String playerId);
+
+// Cancel cooldown
+cooldownManager.cancelCooldown(String playerId);
 ```
 
 ## 🤝 Contributing
