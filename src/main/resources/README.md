@@ -202,13 +202,10 @@ This is an open-source project! Contributions welcome:
 
 - **Issues**: Report bugs on GitHub Issues
 - **Email**: robert@grafy.org
-- **Website**: https://grafy.org
+- **Website**: https://grafy.org (coming soon)
 
 ---
 
 **Built with ❤️ for the Hytale community**
 
-
 *This plugin serves as a foundation and learning resource for other Hytale plugin developers. The threading solutions and API patterns can be applied to many other plugin types.*
-
-

@@ -2,6 +2,8 @@ package com.example.teleportplugin.commands.subcommands;
 
 import com.example.teleportplugin.TeleportPlugin;
 import com.example.teleportplugin.data.HomeManager;
+import com.example.teleportplugin.permissions.PermissionManager;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Transform;
@@ -35,6 +37,29 @@ public class HomeSetCommand extends AbstractPlayerCommand {
                           @Nonnull PlayerRef playerRef,
                           @Nonnull World world) {
         try {
+            // Get player entity for permission checks
+            // For now, we'll skip the player entity cast since we don't have the right API method
+            // Player player = (Player) store.ensureAndGet(ref);
+            PermissionManager permissionManager = TeleportPlugin.getInstance().getPermissionManager();
+
+            // TODO: Permission checks temporarily disabled until we have proper Player API access
+            // Check basic permission
+            // if (!permissionManager.canSetHome(player)) {
+            //     context.sendMessage(Message.raw("You don't have permission to set homes!").color("#ff5555"));
+            //     return;
+            // }
+
+            String playerId = context.sender().getDisplayName();
+
+            // TODO: Home limits temporarily disabled until we have proper Player API access
+            // Check home limit
+            // if (!permissionManager.canSetAnotherHome(player, playerId)) {
+            //     String limitString = permissionManager.getHomesLimitString(player, playerId);
+            //     context.sendMessage(Message.raw("You've reached your home limit! (" + limitString + ")").color("#ff5555"));
+            //     context.sendMessage(Message.raw("Delete a home first or get higher permissions.").color("#ffaa00"));
+            //     return;
+            // }
+
             String homeName = homeNameArg.get(context);
 
             if (homeName.length() > 16) {
@@ -59,8 +84,11 @@ public class HomeSetCommand extends AbstractPlayerCommand {
             double z = position.getZ();
 
             HomeManager homeManager = TeleportPlugin.getInstance().getHomeManager();
-            String playerId = context.sender().getDisplayName();
             homeManager.setHome(playerId, homeName, x, y, z);
+
+            // TODO: Re-enable when Player API is available
+            // Get updated limit string after setting home
+            // String limitString = permissionManager.getHomesLimitString(player, playerId);
 
             context.sendMessage(Message.raw("+====================================+").color("#55ffff"));
             context.sendMessage(Message.raw("|         HOME SET SUCCESSFUL        |").color("#00ff00").bold(true));
@@ -69,6 +97,9 @@ public class HomeSetCommand extends AbstractPlayerCommand {
                     .insert(Message.raw(homeName).color("#ffffff")));
             context.sendMessage(Message.raw("Position: ").color("#ffaa00").bold(true)
                     .insert(Message.raw(String.format("%.1f, %.1f, %.1f", x, y, z)).color("#ffffff")));
+            // TODO: Re-enable home count display when Player API is available
+            // context.sendMessage(Message.raw("Homes: ").color("#ffaa00").bold(true)
+            //         .insert(Message.raw(limitString).color("#ffffff")));
             context.sendMessage(Message.raw("Use '/home tp " + homeName + "' to teleport!").color("#aaaaaa"));
 
             System.out.println("[HomeSetCommand] Player " + playerId + " set home '" + homeName + "' at " + x + "," + y + "," + z);

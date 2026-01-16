@@ -1,26 +1,34 @@
 package com.example.teleportplugin.data;
 
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 public class HomeManager {
-    // Player Name -> Map von Home-Namen -> Home-Positionen (simplified for now)
-    private final Map<String, Map<String, HomeLocation>> homes;
+    // Player Name -> Map von Home-Namen -> Home-Positionen
+    private final Map<String, Map<String, HomeData.HomeLocation>> homes;
+    private final Path dataDirectory;
 
-    public HomeManager() {
-        this.homes = new HashMap<>();
-        System.out.println("[HomeManager] Home data system initialized");
+    public HomeManager(Path dataDirectory) {
+        this.dataDirectory = dataDirectory;
+        this.homes = HomeData.loadHomes(dataDirectory);
+        System.out.println("[HomeManager] Home data system initialized with JSON persistence");
     }
 
     public void setHome(String playerId, String name, double x, double y, double z) {
-        homes.computeIfAbsent(playerId, k -> new HashMap<>())
-              .put(name, new HomeLocation(x, y, z));
-        System.out.println("[HomeManager] Set home '" + name + "' for player " + playerId);
+        setHome(playerId, name, x, y, z, "default");
     }
 
-    public HomeLocation getHome(String playerId, String name) {
-        Map<String, HomeLocation> playerHomes = homes.get(playerId);
+    public void setHome(String playerId, String name, double x, double y, double z, String worldId) {
+        homes.computeIfAbsent(playerId, k -> new HashMap<>())
+              .put(name, new HomeData.HomeLocation(x, y, z, worldId));
+        saveData();
+        System.out.println("[HomeManager] Set home '" + name + "' for player " + playerId + " at " + new HomeData.HomeLocation(x, y, z, worldId));
+    }
+
+    public HomeData.HomeLocation getHome(String playerId, String name) {
+        Map<String, HomeData.HomeLocation> playerHomes = homes.get(playerId);
         if (playerHomes == null) {
             return null;
         }
@@ -28,19 +36,20 @@ public class HomeManager {
     }
 
     public boolean deleteHome(String playerId, String name) {
-        Map<String, HomeLocation> playerHomes = homes.get(playerId);
+        Map<String, HomeData.HomeLocation> playerHomes = homes.get(playerId);
         if (playerHomes == null) {
             return false;
         }
         boolean removed = playerHomes.remove(name) != null;
         if (removed) {
+            saveData();
             System.out.println("[HomeManager] Deleted home '" + name + "' for player " + playerId);
         }
         return removed;
     }
 
     public Set<String> getHomeNames(String playerId) {
-        Map<String, HomeLocation> playerHomes = homes.get(playerId);
+        Map<String, HomeData.HomeLocation> playerHomes = homes.get(playerId);
         if (playerHomes == null) {
             return Set.of();
         }
@@ -48,22 +57,30 @@ public class HomeManager {
     }
 
     public boolean hasHome(String playerId, String name) {
-        Map<String, HomeLocation> playerHomes = homes.get(playerId);
+        Map<String, HomeData.HomeLocation> playerHomes = homes.get(playerId);
         return playerHomes != null && playerHomes.containsKey(name);
     }
 
-    public static class HomeLocation {
-        public final double x, y, z;
+    /**
+     * Get the number of homes a player has
+     */
+    public int getHomeCount(String playerId) {
+        Map<String, HomeData.HomeLocation> playerHomes = homes.get(playerId);
+        return playerHomes == null ? 0 : playerHomes.size();
+    }
 
-        public HomeLocation(double x, double y, double z) {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-        }
+    /**
+     * Save data to JSON file
+     */
+    private void saveData() {
+        HomeData.saveHomes(homes, dataDirectory);
+    }
 
-        @Override
-        public String toString() {
-            return String.format("(%.1f, %.1f, %.1f)", x, y, z);
-        }
+    /**
+     * Manual save method for plugin shutdown
+     */
+    public void saveAll() {
+        saveData();
+        System.out.println("[HomeManager] Manual save completed");
     }
 }

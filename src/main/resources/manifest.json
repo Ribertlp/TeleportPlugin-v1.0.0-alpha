@@ -14,11 +14,10 @@
       "Url": "https://claude.ai/code"
     }
   ],
-  "Website": "https://github.com/Ribertlp/TeleportPlugin-v1.0.0-alpha",
+  "Website": "https://github.com/Ribertlp/HytaleDevCore-TeleportPlugin",
   "Main": "com.example.teleportplugin.TeleportPlugin",
   "ServerVersion": "*",
   "Dependencies": {},
   "OptionalDependencies": {},
   "DisabledByDefault": false
-
 }

@@ -48,7 +48,7 @@ public class HomeListCommand extends CommandBase {
                 // List all homes with their locations
                 int count = 1;
                 for (String homeName : homeNames) {
-                    HomeManager.HomeLocation home = homeManager.getHome(playerId, homeName);
+                    var home = homeManager.getHome(playerId, homeName);
 
                     context.sendMessage(Message.raw(count + ". ").color("#aaaaaa")
                             .insert(Message.raw(homeName).color("#00ff00").bold(true))
